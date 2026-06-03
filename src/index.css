@@ -4,10 +4,17 @@
 
 html, body, #root { height: 100%; }
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  background: #f1f5f9;
-  color: #0f172a;
+  font-family: 'Lora', Georgia, serif;
+  background: #faf9f5;
+  color: #141413;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* Заголовки секций и подписи — гротеск Poppins для контраста с текстом */
+.font-heading { font-family: 'Poppins', Arial, sans-serif; }
 
 @media print {
   .no-print { display: none !important; }

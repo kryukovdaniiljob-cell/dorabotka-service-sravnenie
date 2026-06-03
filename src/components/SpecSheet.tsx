@@ -13,9 +13,9 @@ const fmt = (x: number | string | undefined, dec = 2): string => {
 
 function Row({ label, value, unit }: { label: string; value: React.ReactNode; unit?: string }) {
   return (
-    <div className="flex justify-between gap-3 py-0.5 border-b border-slate-100 text-sm">
-      <span className="text-slate-600">{label}</span>
-      <span className="font-medium text-slate-900 text-right">
+    <div className="flex justify-between gap-3 py-1 border-b border-sand/70 text-sm">
+      <span className="text-ink/60">{label}</span>
+      <span className="font-heading font-medium text-ink text-right tabular-nums">
         {value}{unit ? ` ${unit}` : ''}
       </span>
     </div>
@@ -24,8 +24,11 @@ function Row({ label, value, unit }: { label: string; value: React.ReactNode; un
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-4">
-      <h4 className="text-sm font-semibold text-brand-dark mb-1">{title}</h4>
+    <div className="mb-5">
+      <h4 className="font-heading text-xs font-semibold uppercase tracking-wide text-accent-dark mb-2 flex items-center gap-2">
+        <span className="h-1 w-1 rounded-full bg-accent" />
+        {title}
+      </h4>
       <div>{children}</div>
     </div>
   );
@@ -36,7 +39,7 @@ const DIM_KEYS = ['W','W1','W2','W3','H','H1','H2','H3','H4','L','L1','L2','L3',
 export default function SpecSheet({ result, input }: Props) {
   if (!result.ok || !result.m61) {
     return (
-      <div className="rounded border border-red-300 bg-red-50 p-4 text-red-800 font-medium">
+      <div className="rounded-xl border border-accent/40 bg-accent/10 p-4 font-heading font-medium text-accent-dark">
         {result.fullName}
       </div>
     );
@@ -46,11 +49,11 @@ export default function SpecSheet({ result, input }: Props) {
   const r = result.recup;
 
   return (
-    <div className="text-slate-800">
-      <div className="mb-3">
-        <h2 className="text-lg font-bold text-brand-dark">{result.title}</h2>
-        <p className="text-base font-semibold">{result.fullName}</p>
-        <p className="text-xs text-slate-500">Модель: {result.modelName} · типоразмер №{s.size_no}</p>
+    <div className="text-ink">
+      <div className="mb-5 border-b border-sand pb-4">
+        <h2 className="font-heading text-xl font-semibold text-ink">{result.title}</h2>
+        <p className="font-heading text-lg font-medium text-accent-dark mt-0.5">{result.fullName}</p>
+        <p className="text-xs text-stone mt-1">Модель: {result.modelName} · типоразмер №{s.size_no}</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-x-8">

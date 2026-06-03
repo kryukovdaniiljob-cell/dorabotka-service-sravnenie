@@ -6,3 +6,7 @@ npm-debug.log*
 .vite/
 *.tsbuildinfo
 .claude/settings.local.json
+
+# временные файлы планировщика
+.claude/scheduled_tasks.lock
+.claude/*.lock

@@ -33,29 +33,38 @@ export default function App() {
   const result = useMemo(() => runSelection(input), [input]);
 
   return (
-    <div className="min-h-full">
-      <header className="bg-brand-dark text-white px-5 py-3 no-print">
-        <h1 className="text-xl font-bold">Сервис подбора КПВУ</h1>
-        <p className="text-xs text-cyan-100">Компактные приточные и приточно-вытяжные установки</p>
+    <div className="min-h-full bg-paper">
+      <header className="bg-ink text-paper no-print">
+        <div className="mx-auto max-w-7xl px-6 py-5 flex items-center gap-3">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-paper font-heading font-semibold text-lg">К</span>
+          <div>
+            <h1 className="font-heading text-xl font-semibold tracking-tight">Сервис подбора КПВУ</h1>
+            <p className="text-xs text-stone">Компактные приточные и приточно-вытяжные установки</p>
+          </div>
+        </div>
       </header>
 
-      <div className="mx-auto max-w-7xl p-4 grid lg:grid-cols-[340px_1fr] gap-4">
-        <aside className="bg-white rounded-lg shadow-sm p-4 no-print self-start">
+      <div className="mx-auto max-w-7xl p-4 sm:p-6 grid lg:grid-cols-[360px_1fr] gap-6">
+        <aside className="bg-white rounded-2xl border border-sand shadow-sm p-5 no-print self-start lg:sticky lg:top-6">
           <InputForm value={input} onChange={setInput} />
         </aside>
 
-        <main className="space-y-4 print-full">
-          <div className="flex items-center justify-between no-print">
-            <div className="text-sm text-slate-600">
+        <main className="space-y-6 print-full">
+          <div className="flex items-center justify-between gap-3 no-print">
+            <div className="text-sm">
               {result.ok ? (
-                <span>Подобрана модель <b className="text-brand-dark">{result.modelName}</b>, типоразмер №{result.m61?.size_no}</span>
+                <span className="text-ink/70">
+                  Подобрана модель{' '}
+                  <b className="font-heading font-semibold text-accent-dark">{result.modelName}</b>
+                  , типоразмер №{result.m61?.size_no}
+                </span>
               ) : (
-                <span className="text-red-600">Подбор не выполнен</span>
+                <span className="font-medium text-accent-dark">Подбор не выполнен</span>
               )}
             </div>
             <button
               onClick={() => window.print()}
-              className="rounded bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-heading font-medium text-paper shadow-sm transition hover:bg-accent-dark"
             >
               🖨 Печать / PDF
             </button>
@@ -63,18 +72,22 @@ export default function App() {
 
           <Warnings error={result.error} warnings={result.warnings} />
 
-          <section className="bg-white rounded-lg shadow-sm p-4">
-            <h2 className="text-sm font-semibold text-brand-dark mb-2 no-print">
+          <section className="bg-white rounded-2xl border border-sand shadow-sm p-5 sm:p-6">
+            <h2 className="font-heading text-base font-semibold text-ink mb-3">
               Аэродинамические характеристики
             </h2>
             <AeroChart result={result} input={input} />
           </section>
 
-          <section className="bg-white rounded-lg shadow-sm p-4">
+          <section className="bg-white rounded-2xl border border-sand shadow-sm p-5 sm:p-6">
             <SpecSheet result={result} input={input} />
           </section>
         </main>
       </div>
+
+      <footer className="no-print mx-auto max-w-7xl px-6 pb-8 pt-2 text-xs text-stone">
+        Расчёт воспроизводит движок Excel-калькулятора MiniAHU. Все данные — из models_data.json.
+      </footer>
     </div>
   );
 }

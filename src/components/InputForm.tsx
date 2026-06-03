@@ -7,14 +7,17 @@ interface Props {
 }
 
 const fieldCls =
-  'w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand';
-const labelCls = 'block text-xs font-medium text-slate-600 mb-0.5';
+  'w-full rounded-lg border border-sand bg-paper px-2.5 py-1.5 text-sm text-ink transition focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/30';
+const labelCls = 'block text-xs font-heading font-medium text-ink/60 mb-1';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-4">
-      <h3 className="text-sm font-semibold text-brand-dark border-b border-slate-200 pb-1 mb-2">{title}</h3>
-      <div className="grid grid-cols-2 gap-2">{children}</div>
+    <div className="mb-5">
+      <h3 className="font-heading text-xs font-semibold uppercase tracking-wide text-accent-dark mb-2.5 flex items-center gap-2">
+        <span className="h-1 w-1 rounded-full bg-accent" />
+        {title}
+      </h3>
+      <div className="grid grid-cols-2 gap-2.5">{children}</div>
     </div>
   );
 }
