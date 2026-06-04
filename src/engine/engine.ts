@@ -9,7 +9,7 @@ import type {
 import { moistureContent, enthalpy } from './psychro';
 import { workingPoint, buildChart, fanPressure } from './fan';
 import { selectModelName } from './selectModel';
-import { selectM60, selectM61, qualifySizes } from './selectSize';
+import { selectM60, selectM61 } from './selectSize';
 import { computeRecup } from './recuperator';
 import {
   requiredHeaterKW,
@@ -17,6 +17,7 @@ import {
   waterFlow,
   selectMst,
 } from './heater';
+import { findStock } from './stock';
 
 const db = database as unknown as ModelsDatabase;
 
@@ -33,27 +34,45 @@ export function supplyExhaustModelNames(): string[] {
 
 const CAU_AIRTUBE = new Set(['CAU_F', 'CAU_W', 'Airtube']);
 
+/** Тип нагревателя модели по дескриптору AN6. */
+function modelHeaterKind(modelName: string): 'водяной' | 'электрический' {
+  const h = db.models[modelName]?.heater_type_AN6 ?? '';
+  return /водян/i.test(h) ? 'водяной' : 'электрический';
+}
+
+/** Точка входа: выбор модели по §3 + полный расчёт. */
 export function runSelection(inp: SelectorInput): SelectorResult {
+  const modelName = selectModelName(inp);
+  return computeForModel(inp, modelName, false);
+}
+
+/**
+ * Полный расчёт для конкретной модели.
+ * forceAuto — игнорировать ручной режим и подбирать типоразмер автоматически
+ * (используется при поиске аналога).
+ */
+export function computeForModel(
+  inp: SelectorInput,
+  modelName: string,
+  forceAuto: boolean,
+): SelectorResult {
   const warnings: string[] = [];
   const isSE = inp.installation_type === 'приточно-вытяжная';
-  const manual = inp.selection_mode === 'вручную';
+  const manual = !forceAuto && inp.selection_mode === 'вручную';
   const heaterless = inp.heater_type === 'без нагревателя';
 
   const Qreq = inp.flow;
   const Hreq = inp.head;
   const k = Qreq > 0 ? Hreq / Qreq ** 2 : 0;
 
-  // психрометрия наружного / внутреннего
   const d_out = moistureContent(inp.t_outdoor, inp.rh_outdoor, db.air_properties);
-  const h_out = enthalpy(inp.t_outdoor, d_out);
-  const psy_outdoor = { d: d_out, h: h_out };
+  const psy_outdoor = { d: d_out, h: enthalpy(inp.t_outdoor, d_out) };
   let psy_indoor: { d: number; h: number } | undefined;
   if (isSE && inp.t_indoor != null && inp.rh_indoor != null) {
     const di = moistureContent(inp.t_indoor, inp.rh_indoor, db.air_properties);
     psy_indoor = { d: di, h: enthalpy(inp.t_indoor, di) };
   }
 
-  const modelName = selectModelName(inp);
   const model = db.models[modelName];
 
   const emptyResult = (error: string): SelectorResult => ({
@@ -98,7 +117,7 @@ export function runSelection(inp: SelectorInput): SelectorResult {
 
   // ---- рекуператор (П-В) ----
   let recup;
-  let tIntoHeater = inp.t_outdoor; // вход нагревателя
+  let tIntoHeater = inp.t_outdoor;
   if (isSE && inp.t_indoor != null && inp.rh_indoor != null) {
     recup = computeRecup(
       m60,
@@ -112,24 +131,16 @@ export function runSelection(inp: SelectorInput): SelectorResult {
       },
       db.air_properties,
     );
-    tIntoHeater = recup.t_supply_out; // J33
+    tIntoHeater = recup.t_supply_out;
   }
 
-  // ---- требуемая мощность нагревателя R28 ----
+  // ---- требуемая мощность R28 ----
   const required_heater_kW = heaterless
     ? 0
     : requiredHeaterKW(actual_flow, inp.t_supply, tIntoHeater);
 
   // ---- M61 ----
-  const sel61 = selectM61(
-    model,
-    m60,
-    m60Index,
-    required_heater_kW,
-    heaterless,
-    manual,
-    inp.manual_size_no,
-  );
+  const sel61 = selectM61(model, m60, m60Index, required_heater_kW, heaterless, manual, inp.manual_size_no);
   const m61: SizeData = sel61.m61;
 
   // ---- номинальная мощность R29 ----
@@ -140,12 +151,7 @@ export function runSelection(inp: SelectorInput): SelectorResult {
   // ---- t после нагревателя R31 ----
   let t_after_heater = inp.t_supply;
   if (inp.heater_type === 'электрический') {
-    t_after_heater = tAfterElectricHeater(
-      m61.heater_power_kW || 0,
-      inp.t_supply,
-      actual_flow,
-      tIntoHeater,
-    );
+    t_after_heater = tAfterElectricHeater(m61.heater_power_kW || 0, inp.t_supply, actual_flow, tIntoHeater);
   }
 
   // ---- водяной узел MST ----
@@ -153,8 +159,7 @@ export function runSelection(inp: SelectorInput): SelectorResult {
   if (inp.heater_type === 'водяной' && inp.t_water_in != null && inp.t_water_out != null) {
     const usedPower = Math.min(nominal_heater_kW || required_heater_kW, required_heater_kW || nominal_heater_kW);
     const fw = waterFlow(usedPower || required_heater_kW, inp.t_water_in, inp.t_water_out);
-    // потери давления по воде: приближение из колонок калорифера (если нет — оценка)
-    const dpWater = 0.5 * fw ** 2; // кПа (заглушка коэффициента при отсутствии данных)
+    const dpWater = 0.5 * fw ** 2;
     water = selectMst(db.mst_units, fw, dpWater);
   }
 
@@ -162,23 +167,17 @@ export function runSelection(inp: SelectorInput): SelectorResult {
   if (required_heater_kW > nominal_heater_kW + 1e-6 && !heaterless) {
     warnings.push('Недостаточная мощность нагревателя!');
   }
-  if (inp.t_supply - inp.t_outdoor < 1) {
-    warnings.push('Слишком низкая температура приточного воздуха!');
-  }
+  if (inp.t_supply - inp.t_outdoor < 1) warnings.push('Слишком низкая температура приточного воздуха!');
   if (isSE && inp.t_indoor != null && inp.t_indoor - inp.t_outdoor < 10) {
     warnings.push('Слишком маленькая температура вытяжного воздуха!');
   }
   if (!isSE && inp.heater_type === 'водяной' && inp.t_outdoor < -30) {
     warnings.push('Необходимо предусмотреть преднагрев!');
   }
-  if (isSE && tIntoHeater < -30) {
-    warnings.push('Необходимо предусмотреть внешний преднагрев!');
-  }
+  if (isSE && tIntoHeater < -30) warnings.push('Необходимо предусмотреть внешний преднагрев!');
   if (heaterless) {
     const limit = modelName === 'CAU_F' ? 11 : 3;
-    if (m61.size_no > limit) {
-      warnings.push('Режим «без нагревателя» недоступен для крупных типоразмеров.');
-    }
+    if (m61.size_no > limit) warnings.push('Режим «без нагревателя» недоступен для крупных типоразмеров.');
   }
 
   return {
@@ -201,9 +200,65 @@ export function runSelection(inp: SelectorInput): SelectorResult {
     t_after_heater,
     recup,
     water,
+    stock: findStock(m61.name),
     warnings,
     error: null,
   };
+}
+
+export interface AnalogCandidate {
+  result: SelectorResult;
+  distance: number;     // относительная близость по аэродинамике (меньше = ближе)
+  inStock: boolean;
+}
+
+/**
+ * §2 Подбор честного аналога.
+ * Перебирает все модели того же типа и совместимого нагревателя, подбирает
+ * типоразмер автоматически и ранжирует по близости рабочей точки к исходной,
+ * отдавая приоритет позициям, фактически имеющимся на складе.
+ * Возвращает лучший аналог (отличный от исходного) и список альтернатив.
+ */
+export function findAnalog(
+  inp: SelectorInput,
+  primary: SelectorResult,
+): { best: SelectorResult | null; candidates: AnalogCandidate[] } {
+  if (!primary.ok) return { best: null, candidates: [] };
+
+  const wantHeater: 'водяной' | 'электрический' | null =
+    inp.heater_type === 'без нагревателя' ? null : inp.heater_type;
+
+  const sameType = Object.keys(db.models).filter(
+    (name) => db.models[name].type === primary.modelType,
+  );
+
+  const candidates: AnalogCandidate[] = [];
+  for (const name of sameType) {
+    // совместимость по нагревателю (честный аналог под ту же среду нагрева)
+    if (wantHeater && modelHeaterKind(name) !== wantHeater) continue;
+
+    const res = computeForModel(inp, name, true);
+    if (!res.ok || !res.m61) continue;
+
+    // исключаем сам исходный типоразмер
+    if (res.modelName === primary.modelName && res.m61.name === primary.m61?.name) continue;
+
+    const aero =
+      Math.abs(res.Q_op - primary.Q_op) / Math.max(primary.Q_op, 1) +
+      0.3 * Math.abs(res.actual_head - primary.actual_head) / Math.max(primary.actual_head, 1);
+    const heaterShort = res.warnings.includes('Недостаточная мощность нагревателя!') ? 0.5 : 0;
+    const inStock = (res.stock?.qty ?? 0) > 0;
+
+    candidates.push({ result: res, distance: aero + heaterShort, inStock });
+  }
+
+  // сортировка: сначала в наличии, затем по близости аэродинамики
+  candidates.sort((a, b) => {
+    if (a.inStock !== b.inStock) return a.inStock ? -1 : 1;
+    return a.distance - b.distance;
+  });
+
+  return { best: candidates[0]?.result ?? null, candidates };
 }
 
 export { fanPressure };

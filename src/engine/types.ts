@@ -155,6 +155,8 @@ export interface SelectorResult {
   recup?: RecupResult;
   water?: WaterResult;
 
+  stock?: { code: string; qty: number; matchedName: string; score: number };
+
   warnings: string[];
   error: string | null;
 }

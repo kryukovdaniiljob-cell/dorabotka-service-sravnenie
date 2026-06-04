@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { SelectorInput } from './engine/types';
-import { runSelection } from './engine/engine';
+import type { SelectorInput, SelectorResult } from './engine/types';
+import { runSelection, findAnalog } from './engine/engine';
 import InputForm from './components/InputForm';
 import Warnings from './components/Warnings';
 import AeroChart from './components/AeroChart';
 import SpecSheet from './components/SpecSheet';
+import AnalogModal from './components/AnalogModal';
 
 const DEFAULT_INPUT: SelectorInput = {
   installation_type: 'приточно-вытяжная',
@@ -31,6 +32,15 @@ const DEFAULT_INPUT: SelectorInput = {
 export default function App() {
   const [input, setInput] = useState<SelectorInput>(DEFAULT_INPUT);
   const result = useMemo(() => runSelection(input), [input]);
+
+  const [analogOpen, setAnalogOpen] = useState(false);
+  const [analog, setAnalog] = useState<SelectorResult | null>(null);
+
+  const handleAnalog = () => {
+    const { best } = findAnalog(input, result);
+    setAnalog(best);
+    setAnalogOpen(true);
+  };
 
   return (
     <div className="min-h-full bg-paper">
@@ -62,12 +72,22 @@ export default function App() {
                 <span className="font-medium text-accent-dark">Подбор не выполнен</span>
               )}
             </div>
-            <button
-              onClick={() => window.print()}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-heading font-medium text-paper shadow-sm transition hover:bg-accent-dark"
-            >
-              🖨 Печать / PDF
-            </button>
+            <div className="flex items-center gap-2">
+              {result.ok && (
+                <button
+                  onClick={handleAnalog}
+                  className="rounded-lg border border-accent bg-white px-4 py-2 text-sm font-heading font-medium text-accent-dark shadow-sm transition hover:bg-accent/5"
+                >
+                  🔍 Подобрать аналог
+                </button>
+              )}
+              <button
+                onClick={() => window.print()}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-heading font-medium text-paper shadow-sm transition hover:bg-accent-dark"
+              >
+                🖨 Печать / PDF
+              </button>
+            </div>
           </div>
 
           <Warnings error={result.error} warnings={result.warnings} />
@@ -88,6 +108,14 @@ export default function App() {
       <footer className="no-print mx-auto max-w-7xl px-6 pb-8 pt-2 text-xs text-stone">
         Расчёт воспроизводит движок Excel-калькулятора MiniAHU. Все данные — из models_data.json.
       </footer>
+
+      <AnalogModal
+        open={analogOpen}
+        onClose={() => setAnalogOpen(false)}
+        primary={result}
+        analog={analog}
+        input={input}
+      />
     </div>
   );
 }

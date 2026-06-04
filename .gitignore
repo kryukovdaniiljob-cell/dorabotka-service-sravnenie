@@ -10,3 +10,9 @@ npm-debug.log*
 # временные файлы планировщика
 .claude/scheduled_tasks.lock
 .claude/*.lock
+
+# временные файлы анализа
+_*.json
+_*.py
+_*.txt
+*.xlsx

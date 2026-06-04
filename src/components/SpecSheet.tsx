@@ -54,6 +54,27 @@ export default function SpecSheet({ result, input }: Props) {
         <h2 className="font-heading text-xl font-semibold text-ink">{result.title}</h2>
         <p className="font-heading text-lg font-medium text-accent-dark mt-0.5">{result.fullName}</p>
         <p className="text-xs text-stone mt-1">Модель: {result.modelName} · типоразмер №{s.size_no}</p>
+
+        {result.stock && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-ink/5 px-2.5 py-1 text-sm">
+              <span className="font-heading text-ink/60">НС-код:</span>
+              <span className="font-heading font-semibold text-ink tabular-nums">
+                {result.stock.code !== '—' ? result.stock.code : 'не найден'}
+              </span>
+            </span>
+            <span
+              className={
+                'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-heading font-semibold ' +
+                (result.stock.qty > 0
+                  ? 'bg-green/15 text-green'
+                  : 'bg-stone/20 text-ink/60')
+              }
+            >
+              {result.stock.qty > 0 ? `● На складе: ${result.stock.qty} шт.` : '○ Нет на складе (0 шт.)'}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-x-8">

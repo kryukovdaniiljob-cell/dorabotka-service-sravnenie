@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { runSelection } from '../src/engine/engine';
+import { runSelection, findAnalog } from '../src/engine/engine';
 import { satPressure, moistureContent, enthalpy } from '../src/engine/psychro';
 import { fanPressure } from '../src/engine/fan';
+import { findStock } from '../src/engine/stock';
 import database from '../src/data/models_data.json';
 
 const db = database as any;
@@ -94,6 +95,72 @@ describe('§3 автоподбор модели', () => {
   it('приточная водяная встроенная → ECO_Slim_W', () => {
     const r = runSelection({ installation_type: 'приточная', selection_mode: 'автоматический', flow: 500, head: 150, t_outdoor: -20, rh_outdoor: 80, t_supply: 21, heater_type: 'водяной', automation: 'встроенная', t_water_in: 80, t_water_out: 60 });
     expect(r.modelName).toBe('ECO_Slim_W');
+  });
+});
+
+describe('Складские остатки (НС-код + наличие)', () => {
+  it('контрольный пример: Unimax P 1500 CE → НС-1058575, 14 шт', () => {
+    const m = findStock('Unimax P 1500 CE');
+    expect(m.code).toBe('НС-1058575');
+    expect(m.qty).toBe(14);
+  });
+  it('вариант исполнения не путается (SW не матчит CE)', () => {
+    const m = findStock('Unimax P 450 SW EC');
+    // ближайшее SW-исполнение, не CE
+    expect(m.matchedName).toMatch(/SW/);
+    expect(m.matchedName).not.toMatch(/CE/);
+  });
+  it('AirTube 160 находится с наличием', () => {
+    const m = findStock('AirTube 160');
+    expect(m.code).toBe('НС-1170512');
+    expect(m.qty).toBeGreaterThan(0);
+  });
+  it('ECO_A 160/1-2,4/1 находится', () => {
+    const m = findStock('ECO_A 160/1-2,4/1');
+    expect(m.code).toBe('НС-1084911');
+  });
+  it('отсутствующая позиция (CAUF 500) → qty 0', () => {
+    const m = findStock('CAUF 500 VIM уцененная');
+    expect(m.qty).toBe(0);
+  });
+  it('результат подбора содержит stock', () => {
+    const r = runSelection({
+      installation_type: 'приточно-вытяжная', selection_mode: 'вручную',
+      manual_model_se: 'Unimax_P_CE', manual_size_no: 4,
+      flow: 500, head: 150, t_outdoor: -30, rh_outdoor: 80, t_supply: 21,
+      t_indoor: 18, rh_indoor: 40, recup_type: 'пластинчатый', heater_type: 'электрический',
+    });
+    expect(r.stock).toBeDefined();
+    expect(r.stock!.code).toBe('НС-1058575');
+  });
+});
+
+describe('Подбор аналога', () => {
+  const input = {
+    installation_type: 'приточно-вытяжная' as const,
+    selection_mode: 'вручную' as const,
+    manual_model_se: 'Unimax_P_CE', manual_size_no: 4,
+    flow: 500, head: 150, t_outdoor: -30, rh_outdoor: 80, t_supply: 21,
+    t_indoor: 18, rh_indoor: 40, recup_type: 'пластинчатый' as const,
+    heater_type: 'электрический' as const,
+  };
+  const primary = runSelection(input);
+  const { best, candidates } = findAnalog(input, primary);
+
+  it('аналог найден и отличается от исходного', () => {
+    expect(best).not.toBeNull();
+    expect(best!.modelName !== primary.modelName || best!.m61?.name !== primary.m61?.name).toBe(true);
+  });
+  it('аналог того же типа установки', () => {
+    expect(best!.modelType).toBe(primary.modelType);
+  });
+  it('аналог совместим по нагревателю (электрический, не водяная модель)', () => {
+    expect(best!.modelName).not.toMatch(/_[CSV]W/);
+  });
+  it('приоритет отдаётся позициям в наличии', () => {
+    if (candidates.some((c) => c.inStock)) {
+      expect((best!.stock?.qty ?? 0)).toBeGreaterThan(0);
+    }
   });
 });
 
