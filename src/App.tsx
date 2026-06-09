@@ -30,17 +30,41 @@ const DEFAULT_INPUT: SelectorInput = {
   mounting: 'подвесная',
 };
 
+/** Сравнение черновика и зафиксированного входа по всем ключам. */
+function sameInput(a: SelectorInput, b: SelectorInput): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof SelectorInput>;
+  for (const k of keys) if (a[k] !== b[k]) return false;
+  return true;
+}
+
 export default function App() {
-  const [input, setInput] = useState<SelectorInput>(DEFAULT_INPUT);
-  const result = useMemo(() => runSelection(input), [input]);
+  // form — редактируемый черновик; committed — вход, по которому считается результат.
+  const [form, setForm] = useState<SelectorInput>(DEFAULT_INPUT);
+  const [committed, setCommitted] = useState<SelectorInput>(DEFAULT_INPUT);
+  const result = useMemo(() => runSelection(committed), [committed]);
+  const dirty = !sameInput(form, committed);
 
   const [analogOpen, setAnalogOpen] = useState(false);
   const [analog, setAnalog] = useState<SelectorResult | null>(null);
 
+  const handleCalculate = () => {
+    setCommitted(form);
+    setAnalogOpen(false); // закрываем возможно устаревшее окно аналога
+  };
+
   const handleAnalog = () => {
-    const { best } = findAnalog(input, result);
+    if (dirty || !result.ok) return; // аналог только по актуальному результату
+    const { best } = findAnalog(committed, result);
     setAnalog(best);
     setAnalogOpen(true);
+  };
+
+  // Enter в числовом поле запускает расчёт (без сабмита формы)
+  const onFormKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+      e.preventDefault();
+      handleCalculate();
+    }
   };
 
   return (
@@ -75,14 +99,43 @@ export default function App() {
       </div>
 
       <div className="mx-auto max-w-7xl p-4 sm:p-6 grid lg:grid-cols-[360px_1fr] gap-6">
-        <aside className="bg-white rounded-xl border border-sand shadow-card p-5 no-print self-start lg:sticky lg:top-6">
-          <InputForm value={input} onChange={setInput} />
+        <aside
+          className="bg-white rounded-xl border border-sand shadow-card no-print self-start lg:sticky lg:top-6 overflow-hidden"
+          onKeyDown={onFormKeyDown}
+        >
+          <div className="p-5">
+            <InputForm value={form} onChange={setForm} />
+          </div>
+          {/* Кнопка расчёта — закреплена внизу панели формы */}
+          <div className="sticky bottom-0 border-t border-sand bg-white/95 backdrop-blur px-5 py-3">
+            <button
+              onClick={handleCalculate}
+              disabled={!dirty}
+              className={
+                'w-full rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-card transition ' +
+                (dirty ? 'bg-accent hover:bg-accent-dark' : 'bg-stone/60 cursor-default')
+              }
+            >
+              {dirty ? 'Рассчитать' : 'Рассчитано'}
+            </button>
+            {dirty && (
+              <p className="mt-1.5 text-center text-xs text-accent-dark">
+                Параметры изменены — нажмите «Рассчитать»
+              </p>
+            )}
+          </div>
         </aside>
 
         <main className="space-y-5 print-full">
+          {/* Панель действий / статус */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand bg-white px-5 py-3 shadow-card no-print">
             <div className="text-sm">
-              {result.ok ? (
+              {dirty ? (
+                <span className="inline-flex items-center gap-2 font-medium text-accent-dark">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-accent" />
+                  Параметры изменены — нажмите «Рассчитать»
+                </span>
+              ) : result.ok ? (
                 <span className="text-stone">
                   Подобрана модель{' '}
                   <b className="font-semibold text-ink">{result.modelName}</b>
@@ -93,14 +146,26 @@ export default function App() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {result.ok && (
+              {dirty && (
                 <button
-                  onClick={handleAnalog}
-                  className="rounded-md border border-accent px-4 py-2 text-sm font-medium text-accent-dark transition hover:bg-accent/5"
+                  onClick={handleCalculate}
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition hover:bg-accent-dark"
                 >
-                  Подобрать аналог
+                  Рассчитать
                 </button>
               )}
+              <button
+                onClick={handleAnalog}
+                disabled={dirty || !result.ok}
+                className={
+                  'rounded-md border px-4 py-2 text-sm font-medium transition ' +
+                  (dirty || !result.ok
+                    ? 'border-sand text-stone cursor-not-allowed'
+                    : 'border-accent text-accent-dark hover:bg-accent/5')
+                }
+              >
+                Подобрать аналог
+              </button>
               <button
                 onClick={() => window.print()}
                 className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-card transition hover:bg-accent-dark"
@@ -110,18 +175,21 @@ export default function App() {
             </div>
           </div>
 
-          <Warnings error={result.error} warnings={result.warnings} />
+          {/* Результаты считаются по committed; при изменении формы — приглушаются */}
+          <div className={'space-y-5 transition-opacity ' + (dirty ? 'opacity-50' : 'opacity-100')}>
+            <Warnings error={result.error} warnings={result.warnings} />
 
-          <section className="bg-white rounded-xl border border-sand shadow-card p-5 sm:p-6">
-            <h2 className="text-base font-semibold text-ink mb-3">
-              Аэродинамические характеристики
-            </h2>
-            <AeroChart result={result} input={input} />
-          </section>
+            <section className="bg-white rounded-xl border border-sand shadow-card p-5 sm:p-6">
+              <h2 className="text-base font-semibold text-ink mb-3">
+                Аэродинамические характеристики
+              </h2>
+              <AeroChart result={result} input={committed} />
+            </section>
 
-          <section className="bg-white rounded-xl border border-sand shadow-card p-5 sm:p-6">
-            <SpecSheet result={result} input={input} />
-          </section>
+            <section className="bg-white rounded-xl border border-sand shadow-card p-5 sm:p-6">
+              <SpecSheet result={result} input={committed} />
+            </section>
+          </div>
         </main>
       </div>
 
@@ -137,7 +205,7 @@ export default function App() {
         onClose={() => setAnalogOpen(false)}
         primary={result}
         analog={analog}
-        input={input}
+        input={committed}
       />
     </div>
   );
