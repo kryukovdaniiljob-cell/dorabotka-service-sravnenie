@@ -1,5 +1,6 @@
 import type { SelectorResult, SelectorInput } from '../engine/types';
 import { parseDisplayName } from '../engine/displayName';
+import ModelImages from './ModelImages';
 
 interface Props {
   result: SelectorResult;
@@ -88,6 +89,10 @@ export default function SpecSheet({ result, input }: Props) {
             </span>
           </div>
         )}
+      </div>
+
+      <div className="mb-5">
+        <ModelImages modelName={result.modelName} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-x-8">
