@@ -24,11 +24,19 @@ function Row({ label, value, unit }: { label: string; value: React.ReactNode; un
   );
 }
 
+// Категорийный акцент заголовка блока (как в референсе — цвет по смыслу раздела).
+function blockAccent(title: string): { text: string; dot: string } {
+  if (/екуператор/i.test(title)) return { text: 'text-cyan', dot: 'bg-cyan' };
+  if (/агреватель/i.test(title)) return { text: 'text-orange', dot: 'bg-orange' };
+  return { text: 'text-accent-dark', dot: 'bg-accent' };
+}
+
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  const a = blockAccent(title);
   return (
     <div className="mb-5">
-      <h4 className="font-heading text-xs font-semibold uppercase tracking-wide text-accent-dark mb-2 flex items-center gap-2">
-        <span className="h-1 w-1 rounded-full bg-accent" />
+      <h4 className={'font-heading text-xs font-semibold uppercase tracking-wide mb-2 flex items-center gap-2 ' + a.text}>
+        <span className={'h-1 w-1 rounded-full ' + a.dot} />
         {title}
       </h4>
       <div>{children}</div>

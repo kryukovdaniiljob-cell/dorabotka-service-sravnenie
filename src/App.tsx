@@ -70,7 +70,7 @@ export default function App() {
   return (
     <div className="min-h-full bg-paper">
       {/* Тёмная корпоративная шапка с логотипом */}
-      <header className="bg-shaft text-white no-print">
+      <header className="relative bg-shaft text-white no-print">
         <div className="mx-auto max-w-7xl px-6 h-[72px] flex items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <ShuftLogo />
@@ -84,12 +84,13 @@ export default function App() {
             Онлайн-подбор с остатками по складу
           </div>
         </div>
+        <span className="header-rule" />
       </header>
 
       {/* Полоса заголовка раздела */}
-      <div className="border-b border-sand bg-white no-print">
-        <div className="mx-auto max-w-7xl px-6 py-3">
-          <h1 className="text-lg font-semibold tracking-tight text-ink">
+      <div className="border-b border-sand bg-surface no-print">
+        <div className="mx-auto max-w-7xl px-6 py-4">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
             Подбор компактных приточных и приточно-вытяжных установок
           </h1>
           <p className="text-xs text-stone mt-0.5">
@@ -100,20 +101,22 @@ export default function App() {
 
       <div className="mx-auto max-w-7xl p-4 sm:p-6 grid lg:grid-cols-[360px_1fr] gap-6">
         <aside
-          className="bg-white rounded-xl border border-sand shadow-card no-print self-start lg:sticky lg:top-6 overflow-hidden"
+          className="bg-surface rounded-xl border border-sand no-print self-start lg:sticky lg:top-6 overflow-hidden"
           onKeyDown={onFormKeyDown}
         >
           <div className="p-5">
             <InputForm value={form} onChange={setForm} />
           </div>
           {/* Кнопка расчёта — закреплена внизу панели формы */}
-          <div className="sticky bottom-0 border-t border-sand bg-white/95 backdrop-blur px-5 py-3">
+          <div className="sticky bottom-0 border-t border-sand bg-surface/95 backdrop-blur px-5 py-3">
             <button
               onClick={handleCalculate}
               disabled={!dirty}
               className={
-                'w-full rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-card transition ' +
-                (dirty ? 'bg-accent hover:bg-accent-dark' : 'bg-stone/60 cursor-default')
+                'w-full rounded-md px-4 py-2.5 text-sm font-semibold transition ' +
+                (dirty
+                  ? 'bg-accent text-shaft hover:bg-accent-dark'
+                  : 'bg-surface2 text-stone border border-sand cursor-default')
               }
             >
               {dirty ? 'Рассчитать' : 'Рассчитано'}
@@ -128,7 +131,7 @@ export default function App() {
 
         <main className="space-y-5 print-full">
           {/* Панель действий / статус */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand bg-white px-5 py-3 shadow-card no-print">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand bg-surface px-5 py-3 no-print">
             <div className="text-sm">
               {dirty ? (
                 <span className="inline-flex items-center gap-2 font-medium text-accent-dark">
@@ -149,7 +152,7 @@ export default function App() {
               {dirty && (
                 <button
                   onClick={handleCalculate}
-                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition hover:bg-accent-dark"
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-shaft transition hover:bg-accent-dark"
                 >
                   Рассчитать
                 </button>
@@ -168,7 +171,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => window.print()}
-                className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-card transition hover:bg-accent-dark"
+                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-shaft transition hover:bg-accent-dark"
               >
                 Печать / PDF
               </button>
@@ -176,24 +179,27 @@ export default function App() {
           </div>
 
           {/* Результаты считаются по committed; при изменении формы — приглушаются */}
-          <div className={'space-y-5 transition-opacity ' + (dirty ? 'opacity-50' : 'opacity-100')}>
+          <div
+            key={result.modelName + (result.m61?.name ?? '')}
+            className={'reveal-up space-y-5 transition-opacity ' + (dirty ? 'opacity-50' : 'opacity-100')}
+          >
             <Warnings error={result.error} warnings={result.warnings} />
 
-            <section className="bg-white rounded-xl border border-sand shadow-card p-5 sm:p-6">
+            <section className="bg-surface rounded-xl border border-sand p-5 sm:p-6">
               <h2 className="text-base font-semibold text-ink mb-3">
                 Аэродинамические характеристики
               </h2>
               <AeroChart result={result} input={committed} />
             </section>
 
-            <section className="bg-white rounded-xl border border-sand shadow-card p-5 sm:p-6">
+            <section className="bg-surface rounded-xl border border-sand p-5 sm:p-6">
               <SpecSheet result={result} input={committed} />
             </section>
           </div>
         </main>
       </div>
 
-      <footer className="no-print border-t border-sand bg-white">
+      <footer className="no-print border-t border-sand bg-surface">
         <div className="mx-auto max-w-7xl px-6 py-4 text-xs text-stone flex flex-wrap items-center justify-between gap-2">
           <span>SHUFT HVAC Technologies · Сервис подбора КПВУ</span>
           <span>Расчёт воспроизводит движок калькулятора MiniAHU</span>

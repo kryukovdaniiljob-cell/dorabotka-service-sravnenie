@@ -8,13 +8,13 @@ export default function Warnings({ error, warnings }: Props) {
   return (
     <div className="space-y-2.5">
       {error && (
-        <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent-dark">
+        <div className="rounded-xl border border-orange/50 bg-orange/10 px-4 py-3 text-sm text-orange">
           <span className="font-heading font-semibold">Ошибка: </span>{error}
         </div>
       )}
       {warnings.map((w, i) => (
-        <div key={i} className="flex items-start gap-2 rounded-xl border border-stone/50 bg-sand/60 px-4 py-2.5 text-sm text-ink/80">
-          <span className="text-accent">⚠</span>
+        <div key={i} className="flex items-start gap-2 rounded-xl border border-sand bg-surface2 px-4 py-2.5 text-sm text-ink/80">
+          <span className="text-orange">⚠</span>
           <span>{w}</span>
         </div>
       ))}

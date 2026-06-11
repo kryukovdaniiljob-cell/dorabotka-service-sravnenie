@@ -25,47 +25,49 @@ export default function AeroChart({ result, input }: Props) {
     <div>
       <ResponsiveContainer width="100%" height={420}>
         <ComposedChart data={data} margin={{ top: 16, right: 24, bottom: 30, left: 16 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(118,118,118,0.22)" />
           <XAxis
             dataKey="Q" type="number" domain={[0, Math.round(xMax)]}
-            label={{ value: 'Расход, м³/ч', position: 'insideBottom', offset: -12, fill: '#0f172a' }}
-            tick={{ fontSize: 11, fill: '#0f172a' }} stroke="#94a3b8"
+            label={{ value: 'Расход, м³/ч', position: 'insideBottom', offset: -12, fill: '#cbd0d6' }}
+            tick={{ fontSize: 11, fill: '#cbd0d6' }} stroke="#52555b"
           />
           <YAxis
-            label={{ value: 'Напор, Па', angle: -90, position: 'insideLeft', fill: '#0f172a' }}
-            tick={{ fontSize: 11, fill: '#0f172a' }} stroke="#94a3b8"
+            label={{ value: 'Напор, Па', angle: -90, position: 'insideLeft', fill: '#cbd0d6' }}
+            tick={{ fontSize: 11, fill: '#cbd0d6' }} stroke="#52555b"
           />
           <Tooltip
             formatter={(val: number, name: string) => [`${val} Па`, name]}
             labelFormatter={(l) => `Расход: ${l} м³/ч`}
-            contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontFamily: 'Inter, system-ui, sans-serif' }}
+            contentStyle={{ borderRadius: 8, border: '1px solid rgba(118,118,118,0.5)', background: '#1a1a1a', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}
+            labelStyle={{ color: '#cbd0d6' }}
+            itemStyle={{ color: '#fff' }}
           />
-          <Legend verticalAlign="top" height={28} wrapperStyle={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 12 }} />
+          <Legend verticalAlign="top" height={28} wrapperStyle={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 12, color: '#cbd0d6' }} />
 
-          <Line type="monotone" dataKey="fan" name="Хар-ка установки" stroke="#2f6fb5"
+          <Line type="monotone" dataKey="fan" name="Хар-ка установки" stroke="#06c9f4"
             strokeWidth={2.5} dot={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="sys" name="Хар-ка сети" stroke="#e8742c"
+          <Line type="monotone" dataKey="sys" name="Хар-ка сети" stroke="#ff8902"
             strokeWidth={2} dot={false} isAnimationActive={false} />
 
           {/* выноски от рабочей точки к осям */}
           <ReferenceLine segment={[
             { x: result.actual_flow, y: 0 },
             { x: result.actual_flow, y: result.actual_head },
-          ]} stroke="#94a3b8" strokeDasharray="4 4" />
+          ]} stroke="rgba(118,118,118,0.6)" strokeDasharray="4 4" />
           <ReferenceLine segment={[
             { x: 0, y: result.actual_head },
             { x: result.actual_flow, y: result.actual_head },
-          ]} stroke="#94a3b8" strokeDasharray="4 4" />
+          ]} stroke="rgba(118,118,118,0.6)" strokeDasharray="4 4" />
 
           {/* рабочая точка */}
           <ReferenceDot x={result.actual_flow} y={result.actual_head} r={6}
-            fill="#2f9e44" stroke="#fff" strokeWidth={2}
-            label={{ value: `Рабочая точка (${Math.round(result.actual_flow)}; ${Math.round(result.actual_head)})`, position: 'top', fontSize: 11, fill: '#2f9e44' }} />
+            fill="#26cf73" stroke="#101010" strokeWidth={2}
+            label={{ value: `Рабочая точка (${Math.round(result.actual_flow)}; ${Math.round(result.actual_head)})`, position: 'top', fontSize: 11, fill: '#26cf73' }} />
 
           {/* данные запроса */}
           <ReferenceDot x={input.flow} y={input.head} r={5}
-            fill="#0f172a" stroke="#fff" strokeWidth={2}
-            label={{ value: 'Запрос', position: 'bottom', fontSize: 11, fill: '#475569' }} />
+            fill="#eef1f5" stroke="#101010" strokeWidth={2}
+            label={{ value: 'Запрос', position: 'bottom', fontSize: 11, fill: '#9aa0a6' }} />
         </ComposedChart>
       </ResponsiveContainer>
       <p className="text-xs text-stone mt-1">

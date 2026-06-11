@@ -69,7 +69,7 @@ export default function ModelImages({ modelName }: Props) {
       {/* Лайтбокс */}
       {zoom && (
         <div
-          className="no-print fixed inset-0 z-[60] flex items-center justify-center bg-ink/70 p-6"
+          className="no-print fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-6"
           onClick={() => setZoom(null)}
         >
           <img
@@ -79,7 +79,7 @@ export default function ModelImages({ modelName }: Props) {
           />
           <button
             onClick={() => setZoom(null)}
-            className="absolute right-6 top-6 rounded-lg bg-white/90 px-3 py-1.5 text-sm font-heading text-ink"
+            className="absolute right-6 top-6 rounded-lg bg-white/90 px-3 py-1.5 text-sm font-heading text-shaft"
           >
             ✕ Закрыть
           </button>
