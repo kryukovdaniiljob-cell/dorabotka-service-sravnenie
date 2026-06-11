@@ -15,9 +15,9 @@ export default function AnalogModal({ open, onClose, primary, analog, input }: P
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-8">
-      <div className="w-full max-w-5xl rounded-2xl border border-sand bg-surface shadow-xl">
-        <div className="sticky top-0 flex items-center justify-between gap-3 rounded-t-2xl border-b border-sand bg-surface px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/50 p-4 sm:p-8">
+      <div className="w-full max-w-5xl rounded-2xl bg-white shadow-xl">
+        <div className="sticky top-0 flex items-center justify-between gap-3 rounded-t-2xl border-b border-sand bg-white px-6 py-4">
           <div>
             <h2 className="font-heading text-lg font-semibold text-ink">Подбор аналога</h2>
             <p className="text-xs text-stone">
@@ -26,7 +26,7 @@ export default function AnalogModal({ open, onClose, primary, analog, input }: P
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg border border-sand px-3 py-1.5 text-sm font-heading text-ink/70 transition hover:bg-surface2"
+            className="rounded-lg border border-sand px-3 py-1.5 text-sm font-heading text-ink/70 transition hover:bg-paper"
           >
             ✕ Закрыть
           </button>
@@ -80,7 +80,7 @@ function CompareCard({
     <div
       className={
         'rounded-xl border p-4 ' +
-        (accent ? 'border-accent/40 bg-accent/5' : 'border-sand bg-surface2')
+        (accent ? 'border-accent/40 bg-accent/5' : 'border-sand bg-paper')
       }
     >
       <p className="font-heading text-xs font-semibold uppercase tracking-wide text-accent-dark mb-1">

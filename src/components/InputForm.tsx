@@ -8,7 +8,7 @@ interface Props {
 }
 
 const fieldCls =
-  'w-full rounded-lg border border-sand bg-surface2 px-2.5 py-1.5 text-sm text-ink transition focus:border-accent focus:bg-surface2 focus:outline-none focus:ring-2 focus:ring-accent/40';
+  'w-full rounded-lg border border-sand bg-paper px-2.5 py-1.5 text-sm text-ink transition focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/30';
 const labelCls = 'block text-xs font-heading font-medium text-ink/60 mb-1';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

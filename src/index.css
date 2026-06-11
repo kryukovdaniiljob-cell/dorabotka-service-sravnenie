@@ -5,85 +5,20 @@
 html, body, #root { height: 100%; }
 body {
   font-family: 'Inter', system-ui, Arial, sans-serif;
-  background: #101010;
-  color: #eef1f5;
-  letter-spacing: -0.01em;
+  background: #f4f6f9;
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', system-ui, Arial, sans-serif;
-  letter-spacing: -0.015em;
 }
 
 .font-heading { font-family: 'Inter', system-ui, Arial, sans-serif; }
 .font-wordmark { font-family: 'Oswald', 'Arial Narrow', sans-serif; }
 
-/* Числа — табличные (для ровных колонок в спецификации) */
-.tabular-nums { font-variant-numeric: tabular-nums; }
-
-/* Видимый лаймовый фокус-ринг по всему интерфейсу */
-:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #c8dc00;
-  border-radius: 4px;
-}
-
-/* Выделение текста — лаймовая подсветка */
-::selection { background: rgba(200, 220, 0, 0.3); color: #fff; }
-
-/* Тёмный тонкий скроллбар */
-* { scrollbar-width: thin; scrollbar-color: #3a3d44 transparent; }
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb { background: #34373d; border-radius: 6px; }
-*::-webkit-scrollbar-thumb:hover { background: #45484f; }
-*::-webkit-scrollbar-track { background: transparent; }
-
-/* Тонкая линия снизу шапки, «прочерчивается» при загрузке */
-.header-rule {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 1px;
-  background: rgba(118, 118, 118, 0.5);
-  transform: scaleX(0);
-  transform-origin: left;
-  animation: drawBorder 1s ease-out forwards;
-}
-
-@keyframes drawBorder { to { transform: scaleX(1); } }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Мягкое появление блока результатов */
-.reveal-up { animation: fadeInUp 420ms ease-out both; }
-
-@media (prefers-reduced-motion: reduce) {
-  .header-rule, .reveal-up { animation: none; transform: none; opacity: 1; }
-  * { transition: none !important; }
-}
-
-/* ───────────────────────────────────────────────
-   ПЕЧАТЬ / PDF — принудительно светлый, читаемый лист
-   (на экране тема тёмная, в печати — белый фон, тёмный текст)
-   ─────────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
+  body { background: #fff; }
   .print-full { width: 100% !important; }
-
-  body { background: #fff !important; color: #0f172a !important; }
-
-  /* светлые поверхности */
-  [class*="bg-paper"], [class*="bg-surface"], [class*="bg-shaft"] {
-    background: #fff !important;
-  }
-  /* тёмный текст для всех токенов текста */
-  [class*="text-ink"], [class*="text-stone"], [class*="text-white"], [class*="text-accent"] {
-    color: #0f172a !important;
-  }
-  /* светлые тонкие границы */
-  [class*="border-sand"], [class*="border-accent"] {
-    border-color: #e2e8f0 !important;
-  }
 }
