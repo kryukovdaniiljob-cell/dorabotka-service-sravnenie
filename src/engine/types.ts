@@ -163,6 +163,7 @@ export interface SelectorResult {
   water?: WaterResult;
 
   stock?: { code: string; qty: number; matchedName: string; score: number };
+  catalog?: { price: number; url: string; name: string } | null;
 
   warnings: string[];
   error: string | null;

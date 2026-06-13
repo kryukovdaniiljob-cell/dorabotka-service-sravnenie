@@ -71,6 +71,14 @@ export default function SpecSheet({ result, input }: Props) {
 
         {result.stock && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
+            {result.catalog && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-accent/10 px-2.5 py-1 text-sm">
+                <span className="font-heading text-ink/60">Розничная цена:</span>
+                <span className="font-heading font-semibold text-accent-dark tabular-nums">
+                  {result.catalog.price.toLocaleString('ru-RU')} ₽
+                </span>
+              </span>
+            )}
             <span className="inline-flex items-center gap-1 rounded-lg bg-ink/5 px-2.5 py-1 text-sm">
               <span className="font-heading text-ink/60">НС-код:</span>
               <span className="font-heading font-semibold text-ink tabular-nums">
@@ -87,6 +95,16 @@ export default function SpecSheet({ result, input }: Props) {
             >
               {result.stock.qty > 0 ? `● На складе: ${result.stock.qty} шт.` : '○ Нет на складе (0 шт.)'}
             </span>
+            {result.catalog?.url && (
+              <a
+                href={result.catalog.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-accent px-2.5 py-1 text-sm font-heading font-medium text-accent-dark transition hover:bg-accent/5"
+              >
+                Ссылка на товар ↗
+              </a>
+            )}
           </div>
         )}
       </div>
