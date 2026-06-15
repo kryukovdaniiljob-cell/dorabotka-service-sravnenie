@@ -18,6 +18,7 @@ import {
   selectMst,
 } from './heater';
 import { findStock } from './stock';
+import { findCatalog } from './catalog';
 import { parseDisplayName } from './displayName';
 
 const db = database as unknown as ModelsDatabase;
@@ -184,6 +185,10 @@ export function computeForModel(
     if (m61.size_no > limit) warnings.push('Режим «без нагревателя» недоступен для крупных типоразмеров.');
   }
 
+  // склад (НС-код + наличие) и карточка каталога (розничная цена + ссылка) по тому же коду
+  const stock = findStock(m61.name);
+  const catalog = findCatalog(stock.code);
+
   return {
     ok: true,
     modelName,
@@ -204,7 +209,8 @@ export function computeForModel(
     t_after_heater,
     recup,
     water,
-    stock: findStock(m61.name),
+    stock,
+    catalog,
     warnings,
     error: null,
   };

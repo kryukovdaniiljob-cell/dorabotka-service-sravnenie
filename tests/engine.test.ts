@@ -178,6 +178,28 @@ describe('Складские остатки (НС-код + наличие)', () 
   });
 });
 
+describe('Каталог: розничная цена и ссылка по НС-коду', () => {
+  it('контрольный пример Unimax_P_CE №4 → цена и ссылка из каталога', () => {
+    const r = runSelection({
+      installation_type: 'приточно-вытяжная', selection_mode: 'вручную',
+      manual_model_se: 'Unimax_P_CE', manual_size_no: 4,
+      flow: 500, head: 150, t_outdoor: -30, rh_outdoor: 80, t_supply: 21,
+      t_indoor: 18, rh_indoor: 40, recup_type: 'пластинчатый', heater_type: 'электрический',
+    });
+    expect(r.stock!.code).toBe('НС-1058575');
+    expect(r.catalog).not.toBeNull();
+    expect(r.catalog!.price).toBeGreaterThan(0);
+    expect(r.catalog!.url).toMatch(/^https:\/\/b2b\.rusklimat\.com\//);
+  });
+
+  it('join по НС-коду устойчив к префиксу/нулям', async () => {
+    const { findCatalog } = await import('../src/engine/catalog');
+    expect(findCatalog('НС-1058575')!.price).toBe(findCatalog('1058575')!.price);
+    expect(findCatalog('')).toBeNull();
+    expect(findCatalog('НС-0000000')).toBeNull();
+  });
+});
+
 describe('Подбор аналога', () => {
   const input = {
     installation_type: 'приточно-вытяжная' as const,
