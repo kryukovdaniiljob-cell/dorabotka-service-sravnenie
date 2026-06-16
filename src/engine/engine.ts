@@ -5,10 +5,12 @@ import type {
   SelectorInput,
   SelectorResult,
   SizeData,
+  RecupType,
+  HeaterType,
 } from './types';
 import { moistureContent, enthalpy } from './psychro';
 import { workingPoint, buildChart, fanPressure } from './fan';
-import { selectModelName } from './selectModel';
+import { selectModelName, recupTypeOfModel, heaterTypeOfModel } from './selectModel';
 import { selectM60, selectM61 } from './selectSize';
 import { computeRecup } from './recuperator';
 import {
@@ -18,7 +20,9 @@ import {
   selectMst,
 } from './heater';
 import { findStock } from './stock';
+import type { StockMatch } from './stock';
 import { findCatalog } from './catalog';
+import type { CatalogInfo } from './catalog';
 import { parseDisplayName } from './displayName';
 
 const db = database as unknown as ModelsDatabase;
@@ -289,6 +293,104 @@ export function findAnalog(
   });
 
   return { best: candidates[0]?.result ?? null, candidates };
+}
+
+// ---- §«Подбор по моделям»: аналоги по наименованию (duty-независимо) ----
+export interface ModelMatch {
+  modelName: string;
+  modelType: 'supply' | 'supply_exhaust';
+  size: SizeData;
+  cleanName: string;
+  status: string | null;
+  heater: HeaterType | null;
+  recup: RecupType | null;
+  scoreDelta: number;           // |score_O − score_O базы| (близость класса производительности)
+  stock: StockMatch;
+  catalog: CatalogInfo | null;
+}
+
+export interface ModelExplorerOption {
+  modelName: string;
+  size_no: number;
+  cleanName: string;
+  status: string | null;
+}
+
+/** Плоский список «модель + типоразмер» по типу установки (для выбора базы по наименованию). */
+export function explorerOptions(type: 'supply' | 'supply_exhaust'): ModelExplorerOption[] {
+  const out: ModelExplorerOption[] = [];
+  for (const name of Object.keys(db.models)) {
+    if (db.models[name].type !== type) continue;
+    for (const s of db.models[name].sizes) {
+      const parsed = parseDisplayName(s.name);
+      out.push({ modelName: name, size_no: s.size_no, cleanName: parsed.clean, status: parsed.status });
+    }
+  }
+  return out;
+}
+
+function toMatch(modelName: string, size: SizeData, baseScore: number): ModelMatch {
+  const parsed = parseDisplayName(size.name);
+  const stock = findStock(size.name);
+  return {
+    modelName,
+    modelType: db.models[modelName].type,
+    size,
+    cleanName: parsed.clean,
+    status: parsed.status,
+    heater: heaterTypeOfModel(modelName),
+    recup: recupTypeOfModel(modelName),
+    scoreDelta: Math.abs((size.score_O ?? 0) - baseScore),
+    stock,
+    catalog: findCatalog(stock.code),
+  };
+}
+
+export interface ExplorerFilters {
+  heater?: HeaterType;     // undefined = любой
+  recup?: RecupType;       // undefined = любой (для П-В)
+}
+
+/**
+ * Подобрать 1..n функциональных аналогов к выбранной модели+типоразмеру.
+ * Аналог — установка того же типа, близкая по классу производительности (score_O),
+ * с учётом фильтров по нагреву/рекуператору; архив и сам исходник исключаются.
+ * Ранжирование: ближе по классу → в наличии → по складу. Без расхода/напора.
+ */
+export function findAnalogsByModel(
+  baseModelName: string,
+  baseSizeNo: number,
+  filters: ExplorerFilters = {},
+  n = 3,
+): { base: ModelMatch | null; analogs: ModelMatch[] } {
+  const baseModel = db.models[baseModelName];
+  if (!baseModel) return { base: null, analogs: [] };
+  const baseSize = baseModel.sizes.find((s) => s.size_no === baseSizeNo) ?? baseModel.sizes[0];
+  if (!baseSize) return { base: null, analogs: [] };
+  const baseScore = baseSize.score_O ?? 0;
+  const base = toMatch(baseModelName, baseSize, baseScore);
+
+  const matches: ModelMatch[] = [];
+  for (const name of Object.keys(db.models)) {
+    if (db.models[name].type !== baseModel.type) continue;
+    if (filters.heater && heaterTypeOfModel(name) !== filters.heater) continue;
+    if (filters.recup && recupTypeOfModel(name) !== filters.recup) continue;
+    for (const size of db.models[name].sizes) {
+      if (name === baseModelName && size.size_no === baseSizeNo) continue; // не сам
+      if (parseDisplayName(size.name).status !== null) continue;            // не архив
+      matches.push(toMatch(name, size, baseScore));
+    }
+  }
+
+  matches.sort((a, b) => {
+    if (a.scoreDelta !== b.scoreDelta) return a.scoreDelta - b.scoreDelta; // ближе по классу
+    const aIn = a.stock.qty > 0 ? 1 : 0;
+    const bIn = b.stock.qty > 0 ? 1 : 0;
+    if (aIn !== bIn) return bIn - aIn;                                      // в наличии выше
+    return b.stock.qty - a.stock.qty;
+  });
+
+  return { base, analogs: matches.slice(0, n) };
 }
 
 export { fanPressure };

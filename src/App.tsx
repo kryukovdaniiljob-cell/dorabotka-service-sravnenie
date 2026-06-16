@@ -7,6 +7,7 @@ import AeroChart from './components/AeroChart';
 import SpecSheet from './components/SpecSheet';
 import AnalogModal from './components/AnalogModal';
 import ShuftLogo from './components/ShuftLogo';
+import ModelExplorer from './components/ModelExplorer';
 import { generateReport } from './report/generateReport';
 
 const DEFAULT_INPUT: SelectorInput = {
@@ -207,6 +208,11 @@ export default function App() {
             </section>
           </div>
         </main>
+      </div>
+
+      {/* Самостоятельный инструмент: подбор аналогов по наименованию модели */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-6 no-print">
+        <ModelExplorer />
       </div>
 
       <footer className="no-print border-t border-sand bg-white">

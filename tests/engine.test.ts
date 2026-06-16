@@ -178,6 +178,44 @@ describe('Складские остатки (НС-код + наличие)', () 
   });
 });
 
+describe('Подбор по моделям (explorer)', () => {
+  it('находит аналоги того же типа, исключая исходник и архив', async () => {
+    const { findAnalogsByModel } = await import('../src/engine/engine');
+    const { base, analogs } = findAnalogsByModel('Unimax_P_CE', 4, {}, 3);
+    expect(base).not.toBeNull();
+    expect(analogs.length).toBeGreaterThan(0);
+    expect(analogs.length).toBeLessThanOrEqual(3);
+    for (const a of analogs) {
+      expect(a.modelType).toBe('supply_exhaust');           // тот же тип
+      expect(a.status).toBeNull();                          // не архив
+      expect(`${a.modelName}#${a.size.size_no}`).not.toBe('Unimax_P_CE#4'); // не сам
+    }
+    // отсортировано по близости класса
+    for (let i = 1; i < analogs.length; i++) {
+      expect(analogs[i].scoreDelta).toBeGreaterThanOrEqual(analogs[i - 1].scoreDelta);
+    }
+  });
+
+  it('фильтр по нагревателю работает', async () => {
+    const { findAnalogsByModel } = await import('../src/engine/engine');
+    const { analogs } = findAnalogsByModel('Unimax_P_CE', 4, { heater: 'водяной' }, 3);
+    for (const a of analogs) expect(a.heater).toBe('водяной');
+  });
+
+  it('фильтр по рекуператору работает', async () => {
+    const { findAnalogsByModel } = await import('../src/engine/engine');
+    const { analogs } = findAnalogsByModel('Unimax_P_CE', 4, { recup: 'роторный' }, 3);
+    for (const a of analogs) expect(a.recup).toBe('роторный');
+  });
+
+  it('explorerOptions перечисляет позиции по типу установки', async () => {
+    const { explorerOptions } = await import('../src/engine/engine');
+    const se = explorerOptions('supply_exhaust');
+    expect(se.length).toBeGreaterThan(10);
+    expect(se.every((o) => o.cleanName && o.size_no >= 1)).toBe(true);
+  });
+});
+
 describe('Каталог: розничная цена и ссылка по НС-коду', () => {
   it('контрольный пример Unimax_P_CE №4 → цена и ссылка из каталога', () => {
     const r = runSelection({
