@@ -34,6 +34,22 @@ export function supplyExhaustModelNames(): string[] {
   return Object.keys(db.models).filter((m) => db.models[m].type === 'supply_exhaust');
 }
 
+export interface SizeOption {
+  size_no: number;
+  name: string;      // очищенное наименование (без служебных пометок)
+  status: string | null; // «архив»/«снято с производства» или null
+}
+
+/** Список типоразмеров модели для выпадающего выбора по наименованию. */
+export function sizesOfModel(modelName: string): SizeOption[] {
+  const model = db.models[modelName];
+  if (!model) return [];
+  return model.sizes.map((s) => {
+    const parsed = parseDisplayName(s.name);
+    return { size_no: s.size_no, name: parsed.clean, status: parsed.status };
+  });
+}
+
 const CAU_AIRTUBE = new Set(['CAU_F', 'CAU_W', 'Airtube']);
 
 /** Тип нагревателя модели по дескриптору AN6. */
