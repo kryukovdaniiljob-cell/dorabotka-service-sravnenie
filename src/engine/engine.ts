@@ -128,6 +128,7 @@ export function computeForModel(
   }
   const m60 = sel60.m60;
   const m60Index = sel60.m60Index!;
+  const overCurve = sel60.overCurve ?? false;
 
   // ---- аэродинамика ----
   const Q_op = workingPoint(m60, k);
@@ -136,6 +137,23 @@ export function computeForModel(
   const actual_head = actual_flow ** 2 * k;
   const qMax = Math.max(Qreq, Q_op) * 1.3 + 500;
   const chart = buildChart(m60, k, qMax);
+
+  // ---- вытяжка (П-В): своя рабочая точка по той же характеристике вентилятора ----
+  let exhaust: SelectorResult['exhaust'] = null;
+  if (isSE) {
+    const flowEx = inp.flow_exhaust ?? Qreq;
+    const headEx = inp.head_exhaust ?? Hreq;
+    const kEx = flowEx > 0 ? headEx / flowEx ** 2 : 0;
+    const QopEx = workingPoint(m60, kEx);
+    const aFlowEx = Math.min(flowEx, QopEx);
+    exhaust = {
+      flow: flowEx,
+      head: headEx,
+      Q_op: QopEx,
+      actual_flow: aFlowEx,
+      actual_head: aFlowEx ** 2 * kEx,
+    };
+  }
 
   // ---- рекуператор (П-В) ----
   let recup;
@@ -189,6 +207,13 @@ export function computeForModel(
   }
 
   // ---- предупреждения §9 ----
+  if (overCurve) {
+    warnings.push(
+      `Запрошенная точка выше характеристики установки. При заданном сопротивлении ` +
+        `${Math.round(inp.head)} Па установка обеспечит ${Math.round(actual_flow)} м³/ч ` +
+        `(запрошено ${Math.round(Qreq)} м³/ч). Ниже — реальные параметры в рабочей точке.`,
+    );
+  }
   if (required_heater_kW > nominal_heater_kW + 1e-6 && !heaterless) {
     warnings.push('Недостаточная мощность нагревателя!');
   }
@@ -231,6 +256,8 @@ export function computeForModel(
     water,
     stock,
     catalog,
+    overCurve,
+    exhaust,
     warnings,
     error: null,
   };
@@ -269,6 +296,8 @@ export function findAnalog(
 
     const res = computeForModel(inp, name, true);
     if (!res.ok || !res.m61) continue;
+    // аналог должен реально удовлетворять запрос — позиции «выше характеристики» не предлагаем
+    if (res.overCurve) continue;
 
     // исключаем сам исходный типоразмер
     if (res.modelName === primary.modelName && res.m61.name === primary.m61?.name) continue;

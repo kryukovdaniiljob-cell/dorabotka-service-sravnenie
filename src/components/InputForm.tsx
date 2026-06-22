@@ -96,6 +96,13 @@ export default function InputForm({ value, onChange }: Props) {
     set({ [key]: n } as Partial<SelectorInput>);
   };
 
+  // Раздельный ввод расхода/сети для вытяжки (дисбаланс допустим).
+  const exhaustSeparate = v.flow_exhaust != null || v.head_exhaust != null;
+  const toggleExhaust = (separate: boolean) => {
+    if (separate) set({ flow_exhaust: v.flow, head_exhaust: v.head });
+    else set({ flow_exhaust: undefined, head_exhaust: undefined });
+  };
+
   return (
     <div className="text-sm">
       <Section title="Тип и режим подбора">
@@ -176,6 +183,29 @@ export default function InputForm({ value, onChange }: Props) {
 
       {isSE && (
         <Section title="Воздушные параметры — вытяжка">
+          <div className="col-span-2">
+            <label className="flex items-center gap-2 text-xs font-heading text-ink/70 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-accent"
+                checked={!exhaustSeparate}
+                onChange={(e) => toggleExhaust(!e.target.checked)}
+              />
+              Расход и сеть вытяжки — как у притока
+            </label>
+          </div>
+          {exhaustSeparate && (
+            <>
+              <div>
+                <label className={labelCls}>Расход вытяжки, м³/ч</label>
+                <input type="number" min={1} className={fieldCls} value={v.flow_exhaust ?? v.flow} onChange={num('flow_exhaust')} />
+              </div>
+              <div>
+                <label className={labelCls}>Сеть вытяжки, Па</label>
+                <input type="number" min={1} max={1100} className={fieldCls} value={v.head_exhaust ?? v.head} onChange={num('head_exhaust')} />
+              </div>
+            </>
+          )}
           <div>
             <label className={labelCls}>t внутреннего, °C</label>
             <input type="number" className={fieldCls} value={v.t_indoor ?? 18} onChange={num('t_indoor')} />

@@ -81,8 +81,10 @@ export interface SelectorInput {
   manual_model_se?: string;
   manual_size_no?: number;
 
-  flow: number;          // расход, м³/ч
-  head: number;          // напор, Па
+  flow: number;          // расход притока, м³/ч
+  head: number;          // напор (сопротивление сети) притока, Па
+  flow_exhaust?: number; // расход вытяжки, м³/ч (если не задан — равен притоку)
+  head_exhaust?: number; // сопротивление сети вытяжки, Па (если не задан — равен притоку)
   t_outdoor: number;     // t наружного
   rh_outdoor: number;    // φ наружного, %
   t_supply: number;      // t приточного
@@ -164,6 +166,15 @@ export interface SelectorResult {
 
   stock?: { code: string; qty: number; matchedName: string; score: number };
   catalog?: { price: number; url: string; name: string } | null;
+  overCurve?: boolean; // запрошенная точка выше характеристики — показаны реальные параметры рабочей точки
+  // рабочая точка вытяжки (для приточно-вытяжных; своя кривая сети при раздельном вводе)
+  exhaust?: {
+    flow: number;        // запрошенный расход вытяжки
+    head: number;        // сопротивление сети вытяжки
+    Q_op: number;        // рабочий расход (пересечение кривых)
+    actual_flow: number; // фактический расход вытяжки
+    actual_head: number; // фактический напор вытяжки
+  } | null;
 
   warnings: string[];
   error: string | null;

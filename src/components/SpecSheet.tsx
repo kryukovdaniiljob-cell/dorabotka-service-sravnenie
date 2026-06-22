@@ -49,6 +49,8 @@ export default function SpecSheet({ result, input }: Props) {
   const s = result.m61;
   const isSE = result.modelType === 'supply_exhaust';
   const r = result.recup;
+  const ex = result.exhaust;
+  const exhaustShown = isSE && !!ex && (input.flow_exhaust != null || input.head_exhaust != null);
 
   return (
     <div className="text-ink">
@@ -116,8 +118,10 @@ export default function SpecSheet({ result, input }: Props) {
       <div className="grid md:grid-cols-2 gap-x-8">
         <div>
           <Block title="Данные запроса">
-            <Row label="Расход воздуха" value={fmt(input.flow, 0)} unit="м³/ч" />
-            <Row label="Напор (сеть)" value={fmt(input.head, 0)} unit="Па" />
+            <Row label={exhaustShown ? 'Расход притока' : 'Расход воздуха'} value={fmt(input.flow, 0)} unit="м³/ч" />
+            <Row label={exhaustShown ? 'Сеть притока' : 'Напор (сеть)'} value={fmt(input.head, 0)} unit="Па" />
+            {exhaustShown && <Row label="Расход вытяжки" value={fmt(input.flow_exhaust ?? input.flow, 0)} unit="м³/ч" />}
+            {exhaustShown && <Row label="Сеть вытяжки" value={fmt(input.head_exhaust ?? input.head, 0)} unit="Па" />}
             <Row label="t наружного воздуха" value={fmt(input.t_outdoor)} unit="°C" />
             <Row label="φ наружного воздуха" value={fmt(input.rh_outdoor)} unit="%" />
             <Row label="t приточного воздуха" value={fmt(input.t_supply)} unit="°C" />
@@ -126,8 +130,10 @@ export default function SpecSheet({ result, input }: Props) {
           </Block>
 
           <Block title="Параметры установки">
-            <Row label="Фактический расход (E25)" value={fmt(result.actual_flow, 0)} unit="м³/ч" />
-            <Row label="Фактический напор (E26)" value={fmt(result.actual_head, 0)} unit="Па" />
+            <Row label={exhaustShown ? 'Факт. расход — приток' : 'Фактический расход (E25)'} value={fmt(result.actual_flow, 0)} unit="м³/ч" />
+            <Row label={exhaustShown ? 'Факт. напор — приток' : 'Фактический напор (E26)'} value={fmt(result.actual_head, 0)} unit="Па" />
+            {exhaustShown && ex && <Row label="Факт. расход — вытяжка" value={fmt(ex.actual_flow, 0)} unit="м³/ч" />}
+            {exhaustShown && ex && <Row label="Факт. напор — вытяжка" value={fmt(ex.actual_head, 0)} unit="Па" />}
             <Row label="Рабочий расход Q_op" value={fmt(result.Q_op, 0)} unit="м³/ч" />
             <Row label="Фильтр приток" value={fmt(s.filter_supply)} />
             {isSE && <Row label="Фильтр вытяжка" value={fmt(s.filter_exhaust)} />}

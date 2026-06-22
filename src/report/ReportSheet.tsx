@@ -48,6 +48,8 @@ export default function ReportSheet({ result, input, chartPng, reportNo, dateStr
   const s = result.m61;
   const isSE = result.modelType === 'supply_exhaust';
   const r = result.recup;
+  const ex = result.exhaust;
+  const exhaustShown = isSE && !!ex && (input.flow_exhaust != null || input.head_exhaust != null);
   const name = parseDisplayName(result.fullName);
   const imgs = imagesForModel(result.modelName);
 
@@ -105,8 +107,10 @@ export default function ReportSheet({ result, input, chartPng, reportNo, dateStr
         <div data-block style={{ display: 'flex', gap: 24, marginTop: 6 }}>
           <div style={{ flex: 1 }}>
             <BlockTitle>Данные запроса</BlockTitle>
-            <Row label="Расход воздуха" value={`${fmt(input.flow, 0)} м³/ч`} />
-            <Row label="Напор (сеть)" value={`${fmt(input.head, 0)} Па`} />
+            <Row label={exhaustShown ? 'Расход притока' : 'Расход воздуха'} value={`${fmt(input.flow, 0)} м³/ч`} />
+            <Row label={exhaustShown ? 'Сеть притока' : 'Напор (сеть)'} value={`${fmt(input.head, 0)} Па`} />
+            {exhaustShown && <Row label="Расход вытяжки" value={`${fmt(input.flow_exhaust ?? input.flow, 0)} м³/ч`} />}
+            {exhaustShown && <Row label="Сеть вытяжки" value={`${fmt(input.head_exhaust ?? input.head, 0)} Па`} />}
             <Row label="t наружного воздуха" value={`${fmt(input.t_outdoor)} °C`} />
             <Row label="φ наружного воздуха" value={`${fmt(input.rh_outdoor)} %`} />
             <Row label="t приточного воздуха" value={`${fmt(input.t_supply)} °C`} />
@@ -114,8 +118,10 @@ export default function ReportSheet({ result, input, chartPng, reportNo, dateStr
             {isSE && <Row label="φ внутреннего воздуха" value={`${fmt(input.rh_indoor)} %`} />}
 
             <BlockTitle>Параметры установки</BlockTitle>
-            <Row label="Фактический расход" value={`${fmt(result.actual_flow, 0)} м³/ч`} />
-            <Row label="Фактический напор" value={`${fmt(result.actual_head, 0)} Па`} />
+            <Row label={exhaustShown ? 'Факт. расход — приток' : 'Фактический расход'} value={`${fmt(result.actual_flow, 0)} м³/ч`} />
+            <Row label={exhaustShown ? 'Факт. напор — приток' : 'Фактический напор'} value={`${fmt(result.actual_head, 0)} Па`} />
+            {exhaustShown && ex && <Row label="Факт. расход — вытяжка" value={`${fmt(ex.actual_flow, 0)} м³/ч`} />}
+            {exhaustShown && ex && <Row label="Факт. напор — вытяжка" value={`${fmt(ex.actual_head, 0)} Па`} />}
             <Row label="Рабочий расход Q_op" value={`${fmt(result.Q_op, 0)} м³/ч`} />
             <Row label="Фильтр приток" value={fmt(s?.filter_supply)} />
             {isSE && <Row label="Фильтр вытяжка" value={fmt(s?.filter_exhaust)} />}
@@ -168,6 +174,16 @@ export default function ReportSheet({ result, input, chartPng, reportNo, dateStr
             <Row label="Вес" value={`${fmt(s?.dims?.weight_kg, 0)} кг`} />
           </div>
         </div>
+
+        {/* Комплектация / автоматика (с типоразмерами заслонки, хомутов, шумоглушителя) */}
+        {s?.accessories && Object.keys(s.accessories).length > 0 && (
+          <div data-block>
+            <BlockTitle>Комплектация / автоматика</BlockTitle>
+            {Object.entries(s.accessories).map(([key, val]) => (
+              <Row key={key} label={key} value={fmt(val as string | number)} />
+            ))}
+          </div>
+        )}
 
         <div data-block style={{ marginTop: 18, paddingTop: 10, borderTop: `1px solid ${C.sand}`, fontSize: 10, color: C.stone, display: 'flex', justifyContent: 'space-between' }}>
           <span>SHUFT HVAC Technologies · Сервис подбора КПВУ</span>

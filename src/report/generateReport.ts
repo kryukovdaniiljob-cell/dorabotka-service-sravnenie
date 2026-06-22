@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf';
 import type { SelectorResult, SelectorInput } from '../engine/types';
 import { chartToPng } from './chartImage';
 import ReportSheet from './ReportSheet';
+import { parseDisplayName } from '../engine/displayName';
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
@@ -121,7 +122,9 @@ export async function generateReport(result: SelectorResult, input: SelectorInpu
       pdf.link(lx0 / pxPerMm, (ly0 - pageRanges[pageIdx].start) / pxPerMm, lw / pxPerMm, lh / pxPerMm, { url });
     }
 
-    const fileName = `Podbor_${translit(result.modelName)}_${reportNo}.pdf`;
+    // имя файла: «Наименование установки_номер подбора»
+    const cleanName = parseDisplayName(result.fullName).clean || result.modelName;
+    const fileName = `${translit(cleanName)}_${reportNo}.pdf`;
     pdf.save(fileName);
   } finally {
     root.unmount();

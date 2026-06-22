@@ -21,6 +21,7 @@ export interface SizeSelection {
   m60Index: number | null;
   m60: SizeData | null;
   error: string | null;
+  overCurve?: boolean; // запрос выше характеристики — выбран ближайший (наиболее производительный) типоразмер
 }
 
 /** §4.2 M60 — типоразмер по аэродинамике. */
@@ -39,9 +40,16 @@ export function selectM60(
     return { m60Index: idx, m60: model.sizes[idx], error: null };
   }
 
-  const qual = qualifySizes(model, Qreq, Hreq).filter((q) => q.qualifies);
+  const all = qualifySizes(model, Qreq, Hreq);
+  const qual = all.filter((q) => q.qualifies);
   if (qual.length === 0) {
-    return { m60Index: null, m60: null, error: 'Слишком большой расход/напор!' };
+    // запрос выше характеристики: не «падаем», а берём ближайший типоразмер —
+    // тот, что развивает наибольший напор в точке запроса (ближе всех к требуемому),
+    // чтобы показать реальную рабочую точку, а не просто «не соответствует».
+    let best = all[0];
+    for (const q of all) if (q.pFanAtReq > best.pFanAtReq) best = q;
+    if (!best) return { m60Index: null, m60: null, error: 'Слишком большой расход/напор!' };
+    return { m60Index: best.index, m60: best.size, error: null, overCurve: true };
   }
   // минимальный score_O среди прошедших; при равенстве — первый по порядку
   let best = qual[0];
